@@ -1,0 +1,54 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Wed Dec  1 19:56:05 2021
+[*]
+[dumpfile] "/mnt/c/p/skullic/execute_tb.vcd"
+[dumpfile_mtime] "Wed Dec  1 19:53:44 2021"
+[dumpfile_size] 2915
+[savefile] "/mnt/c/p/skullic/execute_tb.gtkw"
+[timestart] 0
+[size] 1228 600
+[pos] -1 -1
+*-15.781829 148700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] test_spell_execute.
+[sst_width] 214
+[signals_width] 252
+[sst_expanded] 1
+[sst_vpaned_height] 152
+@200
+-Inputs
+@22
+test_spell_execute.sp[4:0]
+test_spell_execute.pc[7:0]
+@820
+test_spell_execute.opcode[7:0]
+@22
+test_spell_execute.stack0[7:0]
+test_spell_execute.stack1[7:0]
+@23
+test_spell_execute.exec.memory_input[7:0]
+@200
+-Outputs
+@22
+test_spell_execute.next_pc[7:0]
+test_spell_execute.next_sp[4:0]
+@28
+test_spell_execute.stack_write_count[1:0]
+@22
+test_spell_execute.set_stack_top[7:0]
+test_spell_execute.set_stack_belowtop[7:0]
+@200
+-Memory
+@28
+test_spell_execute.exec.memory_write_type[1:0]
+@22
+test_spell_execute.exec.memory_write_addr[7:0]
+test_spell_execute.exec.memory_write_data[7:0]
+@200
+-
+@22
+test_spell_execute.delay_amount[7:0]
+@28
+test_spell_execute.sleep
+[pattern_trace] 1
+[pattern_trace] 0
