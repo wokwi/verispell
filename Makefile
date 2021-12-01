@@ -7,3 +7,6 @@ test_exectue:
 	iverilog -g2012 -I src -o execute_tb.out test/execute_tb.v src/execute.v
 	./execute_tb.out
 	gtkwave execute_tb.vcd test/execute_tb.gtkw
+
+format:
+	verible-verilog-format --inplace src/*.v test/*.v

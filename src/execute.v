@@ -1,23 +1,25 @@
 // SPDX-FileCopyrightText: © 2021 Uri Shaked <uri@wokwi.com>
 // SPDX-License-Identifier: MIT
 
-module spell_execute(
-  input wire [7:0] opcode,
-  input wire [7:0] pc,
-  input wire [4:0] sp,
-  input wire [7:0] stack_top,
-  input wire [7:0] stack_belowtop,
-  input wire [7:0] memory_input,
-  output reg [7:0] next_pc,
-  output reg [4:0] next_sp,
-  output reg [1:0] stack_write_count,
-  output reg [7:0] set_stack_top,
-  output reg [7:0] set_stack_belowtop,
-  output reg [7:0] memory_write_data,
-  output reg [7:0] memory_write_addr,
-  output reg [1:0] memory_write_type,
-  output reg [7:0] delay_amount,
-  output reg sleep
+`default_nettype none
+
+module spell_execute (
+    input wire [7:0] opcode,
+    input wire [7:0] pc,
+    input wire [4:0] sp,
+    input wire [7:0] stack_top,
+    input wire [7:0] stack_belowtop,
+    input wire [7:0] memory_input,
+    output reg [7:0] next_pc,
+    output reg [4:0] next_sp,
+    output reg [1:0] stack_write_count,
+    output reg [7:0] set_stack_top,
+    output reg [7:0] set_stack_belowtop,
+    output reg [7:0] memory_write_data,
+    output reg [7:0] memory_write_addr,
+    output reg [1:0] memory_write_type,
+    output reg [7:0] delay_amount,
+    output reg sleep
 );
   `include "memtypes.v"
 
@@ -68,8 +70,8 @@ module spell_execute(
         stack_write_count = 1;
       end
       "=": begin
-          next_pc = stack_top;
-          next_sp = sp - 1;
+        next_pc = stack_top;
+        next_sp = sp - 1;
       end
       "@": begin
         if (stack_belowtop != 8'd0) begin
@@ -96,8 +98,7 @@ module spell_execute(
         memory_write_data = stack_belowtop;
         next_sp = sp - 2;
       end
-      "?",
-      "r": begin
+      "?", "r": begin
         set_stack_top = memory_input;
         stack_write_count = 1;
       end
