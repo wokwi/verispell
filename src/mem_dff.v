@@ -21,7 +21,6 @@ module spell_mem_dff (
 
   reg [7:0] code_mem[255:0];
   reg [7:0] data_mem[255:0];
-  reg prev_select;
   reg [1:0] cycles;
 
   always @(posedge clock) begin
@@ -29,7 +28,6 @@ module spell_mem_dff (
       integer i;
       cycles <= 0;
       data_ready <= 0;
-      prev_select <= 0;
       for (i = 0; i < 255; i++) code_mem[i] = 0;
       for (i = 0; i < 255; i++) data_mem[i] = 0;
     end else begin
