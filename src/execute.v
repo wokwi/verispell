@@ -10,6 +10,7 @@ module spell_execute (
     input wire [7:0] stack_top,
     input wire [7:0] stack_belowtop,
     input wire [7:0] memory_input,
+    input wire out_of_order_exec,
     output reg [7:0] next_pc,
     output reg [4:0] next_sp,
     output reg [1:0] stack_write_count,
@@ -24,7 +25,7 @@ module spell_execute (
   `include "memtypes.v"
 
   always @(*) begin
-    next_pc = pc + 8'd1;
+    next_pc = out_of_order_exec ? pc : pc + 8'd1;
     next_sp = sp;
     stack_write_count = 2'd0;
     set_stack_top = 8'dx;

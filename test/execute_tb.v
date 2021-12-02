@@ -35,6 +35,7 @@ module test_spell_execute ();
       .memory_input(memory_input),
       .next_pc(next_pc),
       .next_sp(next_sp),
+      .out_of_order_exec(1'b0),
       .stack_write_count(stack_write_count),
       .set_stack_top(set_stack_top),
       .set_stack_belowtop(set_stack_belowtop),

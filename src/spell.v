@@ -56,7 +56,10 @@ module spell (
   wire [7:0] memory_write_data;
   wire [7:0] delay_amount;
   wire sleep;
+
+  // Out of order execution
   reg single_step;
+  reg out_of_order_exec;
 
   wire [4:0] stack_top_index = sp - 1;
   wire [7:0] stack_top = stack[stack_top_index];
@@ -114,6 +117,7 @@ module spell (
       .memory_input(memory_input),
       .next_pc(next_pc),
       .next_sp(next_sp),
+      .out_of_order_exec(out_of_order_exec),
       .stack_write_count(stack_write_count),
       .set_stack_top(set_stack_top),
       .set_stack_belowtop(set_stack_belowtop),
@@ -135,6 +139,10 @@ module spell (
       .data_out(mem_read_value),
       .data_ready(mem_data_ready)
   );
+
+  function is_data_opcode(input [7:0] opcode);
+    is_data_opcode = (opcode == "?" || opcode == "r");
+  endfunction
 
   // Wishbone reads
   always @(posedge clock) begin
@@ -174,6 +182,7 @@ module spell (
       opcode <= 0;
       mem_select <= 0;
       single_step <= 0;
+      out_of_order_exec <= 0;
       wb_write_ack <= 0;
     end else begin
       if (wb_write) begin
@@ -182,11 +191,13 @@ module spell (
           REG_SP: sp <= i_wb_data[4:0];
           REG_EXEC: begin
             opcode <= i_wb_data[7:0];
-            state <= StateFetchData;
+            state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
             single_step <= 1;
+            out_of_order_exec <= 1;
           end
           REG_RUN: begin
             if (i_wb_data[0] && state == StateSleep) begin
+              out_of_order_exec <= 0;
               state <= StateFetch;
             end
             single_step <= i_wb_data[1];
@@ -211,8 +222,7 @@ module spell (
             if (mem_data_ready) begin
               mem_select <= 0;
               opcode <= mem_read_value;
-              if (opcode == "?" || opcode == "r") state <= StateFetchData;
-              else state <= StateExecute;
+              state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
             end
           end
           StateFetchData: begin
@@ -231,6 +241,9 @@ module spell (
             // Execute a single instruction
             pc <= next_pc;
             sp <= next_sp;
+            mem_type <= memory_write_type;
+            mem_addr <= memory_write_addr;
+            mem_write_value <= memory_write_data;
             if (stack_write_count == 1 || stack_write_count == 2) begin
               stack[next_sp-1] = set_stack_top;
             end
@@ -250,10 +263,7 @@ module spell (
           end
           StateStore: begin
             // Store data from instruction into either code or data memory
-            mem_select <= 1;
-            mem_type <= memory_write_type;
-            mem_addr <= memory_write_data;
-            mem_write_value <= memory_write_data;
+            mem_select   <= 1;
             mem_write_en <= 1;
             if (mem_data_ready) begin
               mem_select <= 0;

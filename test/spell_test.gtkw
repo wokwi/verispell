@@ -1,0 +1,62 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Thu Dec  2 02:38:35 2021
+[*]
+[dumpfile] "/mnt/c/p/skullic/spell_test.vcd"
+[dumpfile_mtime] "Thu Dec  2 02:38:09 2021"
+[dumpfile_size] 20067
+[savefile] "/mnt/c/p/skullic/test/spell_test.gtkw"
+[timestart] 0
+[size] 1908 999
+[pos] -1 -1
+*-21.433130 18610000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] spell.
+[sst_width] 214
+[signals_width] 194
+[sst_expanded] 1
+[sst_vpaned_height] 293
+@28
+spell.clock
+spell.reset
+@820
+spell.state_name[63:0]
+spell.opcode[7:0]
+@22
+spell.pc[7:0]
+spell.sp[4:0]
+@24
+spell.stack_top[7:0]
+@820
+spell.stack_top[7:0]
+@800200
+-wb
+@22
+spell.i_wb_addr[31:0]
+@28
+spell.i_wb_stb
+spell.i_wb_we
+@22
+spell.i_wb_data[31:0]
+spell.o_wb_data[31:0]
+@28
+spell.o_wb_ack
+@1000200
+-wb
+@22
+spell.la_data_out[31:0]
+@c00201
+-mem
+@29
+spell.mem.select
+spell.mem.memory_type[1:0]
+spell.mem.write
+@23
+spell.mem.addr[7:0]
+spell.mem.data_in[7:0]
+spell.mem.data_out[7:0]
+@29
+spell.mem.data_ready
+@1401201
+-mem
+[pattern_trace] 1
+[pattern_trace] 0
