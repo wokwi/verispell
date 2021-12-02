@@ -33,24 +33,27 @@ module spell_mem_dff (
       for (i = 0; i < 255; i++) code_mem[i] = 0;
       for (i = 0; i < 255; i++) data_mem[i] = 0;
     end else begin
-      prev_select <= select;
-      cycles <= cycles - 1;
-      if (!prev_select && select) cycles <= 2'b11;
-      if (!select) data_out <= 8'bx;
-      if (cycles == 0 && select) begin
-        data_ready <= 1;
-        if (write) begin
-          case (memory_type)
-            MemoryTypeData: data_mem[addr] <= data_in;
-            MemoryTypeCode: code_mem[addr] <= data_in;
-            default: data_ready <= 1'bx;
-          endcase
-        end else begin
-          case (memory_type)
-            MemoryTypeData: data_out <= data_mem[addr];
-            MemoryTypeCode: data_out <= code_mem[addr];
-            default: data_ready <= 1'bx;
-          endcase
+      if (!select) begin
+        data_out   <= 8'bx;
+        data_ready <= 0;
+        cycles     <= 2'b11;
+      end else begin
+        cycles <= cycles - 1;
+        if (cycles == 0 && !data_ready) begin
+          data_ready <= 1;
+          if (write) begin
+            case (memory_type)
+              MemoryTypeData: data_mem[addr] <= data_in;
+              MemoryTypeCode: code_mem[addr] <= data_in;
+              default: data_ready <= 1'bx;
+            endcase
+          end else begin
+            case (memory_type)
+              MemoryTypeData: data_out <= data_mem[addr];
+              MemoryTypeCode: data_out <= code_mem[addr];
+              default: data_ready <= 1'bx;
+            endcase
+          end
         end
       end
     end

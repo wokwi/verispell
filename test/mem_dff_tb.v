@@ -38,48 +38,44 @@ module test_spell_mem_dff ();
   end
 
   initial begin
-    reset = 1;
+    reset  = 1;
     select = 0;
-    #20
-    reset = 0;
-    #10
+    #20 reset = 0;
+    #10 reset = 0;
 
-    // Write a byte to data location 50 
+    // Write a byte to data location 50
     addr = 50;
     data_in = 42;
     write = 1;
     memory_type = MemoryTypeData;
     select = 1;
-    #90 
-    select = 0;
+    #90 select = 0;
     data_in = 0;
-    #20
+    #10 reset = 0;
 
     // Read a byte from code location 50
     addr = 50;
     write = 0;
     memory_type = MemoryTypeCode;
     select = 1;
-    #90 
-    select = 0;
-    #20
+    #90 select = 0;
+    #10 reset = 0;
 
     // Read a byte from data location 50
     addr = 50;
     write = 0;
     memory_type = MemoryTypeData;
     select = 1;
-    #90
-    select = 0;
-    #20
+    #90 select = 0;
+    #10 reset = 0;
 
     // Read a byte from data location 60
     addr = 60;
     write = 0;
     memory_type = MemoryTypeData;
     select = 1;
-    #90
-    select = 0;
+    #90 select = 0;
+    #10 reset = 0;
 
     // Write a byte to code location 50 
     addr = 50;
@@ -87,28 +83,25 @@ module test_spell_mem_dff ();
     write = 1;
     memory_type = MemoryTypeCode;
     select = 1;
-    #90 
-    select = 0;
+    #90 select = 0;
     data_in = 0;
-    #20
+    #10 reset = 0;
 
     // Read a byte from code location 50
     addr = 50;
     write = 0;
     memory_type = MemoryTypeCode;
     select = 1;
-    #90 
-    select = 0;
-    #20
+    #90 select = 0;
+    #10 reset = 0;
 
     // Read a byte from data location 50
     addr = 50;
     write = 0;
     memory_type = MemoryTypeData;
     select = 1;
-    #90
-    select = 0;
-    #20
+    #90 select = 0;
+    #10 reset = 0;
 
     $finish();
   end
