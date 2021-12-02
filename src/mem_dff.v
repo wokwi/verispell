@@ -28,8 +28,8 @@ module spell_mem_dff (
       integer i;
       cycles <= 0;
       data_ready <= 0;
-      for (i = 0; i < 255; i++) code_mem[i] = 0;
-      for (i = 0; i < 255; i++) data_mem[i] = 0;
+      for (i = 0; i < 256; i++) code_mem[i] = 0;
+      for (i = 0; i < 256; i++) data_mem[i] = 0;
     end else begin
       if (!select) begin
         data_out   <= 8'bx;
