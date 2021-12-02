@@ -100,6 +100,11 @@ async def test_spell(dut):
     dut._log.info("input clock = %d MHz, period = %.2f ns" %
                   (clock_mhz, clk_period_ns))
 
+    if hasattr(dut, 'VPWR'):
+      # Running a gate-level simulation, connect the power and ground signals
+      dut.VGND <= 0
+      dut.VPWR <= 1
+
     wishbone_signals = {
         "cyc":  "i_wb_cyc",
         "stb":  "i_wb_stb",

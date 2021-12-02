@@ -18,5 +18,10 @@ test_spell:
 	MODULE=test.test_spell vvp -M $$(cocotb-config --prefix)/cocotb/libs -m libcocotbvpi_icarus ./spell_test.out
 	gtkwave spell_test.vcd test/spell_test.gtkw
 
+test_gate_level:
+	iverilog -o spell_gate_level.out -s spell -s dump -g2012 gl/spell.lvs.powered.v test/dump_spell.v -I $(PDK_ROOT)/sky130A
+	MODULE=test.test_spell vvp -M $$(cocotb-config --prefix)/cocotb/libs -m libcocotbvpi_icarus spell_gate_level.out
+	gtkwave spell_test.vcd test/spell_test.gtkw
+
 format:
 	verible-verilog-format --inplace src/*.v test/*.v
