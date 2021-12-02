@@ -98,13 +98,13 @@ module spell (
 
   always @(*) begin
     case (state)
-      StateFetch: state_name <= 64'("Fetch");
-      StateFetchData: state_name <= 64'("FetchDat");
-      StateExecute: state_name <= 64'("Execute");
-      StateStore: state_name <= 64'("Store");
-      StateDelay: state_name <= 64'("Delay");
-      StateSleep: state_name <= 64'("Sleep");
-      default: state_name <= 64'("Invalid");
+      StateFetch: state_name <= "Fetch";
+      StateFetchData: state_name <= "FetchDat";
+      StateExecute: state_name <= "Execute";
+      StateStore: state_name <= "Store";
+      StateDelay: state_name <= "Delay";
+      StateSleep: state_name <= "Sleep";
+      default: state_name <= "Invalid";
     endcase
   end
 
@@ -171,10 +171,11 @@ module spell (
     end
   end
 
+  integer j;
+
   // Main logic
   always @(posedge clock) begin
     if (reset) begin
-      integer j;
       state <= StateSleep;
       pc    <= 0;
       sp    <= 0;
@@ -280,7 +281,7 @@ module spell (
               state <= single_step ? StateSleep : StateFetch;
             end
           end
-          default: state <= 'x;
+          default: state <= 3'bx;
         endcase
       end
     end
