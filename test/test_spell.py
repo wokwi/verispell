@@ -73,7 +73,7 @@ class SpellController:
     async def push(self, value):
         std_opcodes = "+-|&^<>@=!?2rwxz"
         add_amount = 0
-        while (chr(value) in std_opcodes):
+        while (chr(value) in std_opcodes or value == 255):
             value = value - 1
             add_amount += 1
         await self.exec_step(value)

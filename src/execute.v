@@ -114,7 +114,7 @@ module spell_execute (
         set_stack_belowtop = stack_top;
         stack_write_count = 2;
       end
-      "z": begin
+      "z", 8'hff: begin
         sleep = 1;
       end
       default: begin
