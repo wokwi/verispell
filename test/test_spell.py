@@ -9,7 +9,8 @@ reg_sp = 0x3000_0004
 reg_exec = 0x3000_0008
 reg_run = 0x3000_000c
 reg_cycles_per_ms = 0x3000_0010
-reg_stack_start = 0x3000_0100
+reg_stack_top = 0x3000_0014
+reg_stack_push = 0x3000_0018
 
 stateNames = ["Fetch", "FetchDat", "Execute",
               "Store", "Delay", "Sleep", "Invalid", "Invalid"]

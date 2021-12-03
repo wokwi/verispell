@@ -35,9 +35,8 @@ module spell (
   localparam REG_EXEC = 24'h008;
   localparam REG_RUN = 24'h00c;
   localparam REG_CYCLES_PER_MS = 24'h010;
-
-  localparam REG_STACK_MASK = 24'hffff00;
-  localparam REG_STACK_VALUE = 24'h000100;
+  localparam REG_STACK_TOP = 24'h014;
+  localparam REG_STACK_PUSH = 24'h018;
 
   reg [2:0] state;
   reg [7:0] pc;
@@ -156,13 +155,9 @@ module spell (
         REG_EXEC: o_wb_data <= {24'b0, opcode};
         REG_RUN: o_wb_data <= {30'b0, single_step, state != StateSleep};
         REG_CYCLES_PER_MS: o_wb_data <= {8'b0, cycles_per_ms};
+        REG_STACK_TOP: o_wb_data <= {24'b0, stack_top};
         default: begin
-          if ((wb_addr & REG_STACK_MASK) == REG_STACK_VALUE) begin
-            // TODO: Do unaligned WB read really work?
-            o_wb_data <= {24'b0, stack[wb_stack_addr]};
-          end else begin
-            o_wb_data <= 32'b0;
-          end
+          o_wb_data <= 32'b0;
         end
       endcase
       wb_read_ack <= 1;
@@ -204,10 +199,10 @@ module spell (
             single_step <= i_wb_data[1];
           end
           REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
-          default:
-          // TODO: Do unaligned WB writes really work?
-              if ((wb_addr & REG_STACK_MASK) == REG_STACK_VALUE) begin
-            stack[wb_stack_addr] = o_wb_data[7:0];
+          REG_STACK_TOP: stack[stack_top_index] <= o_wb_data[7:0];
+          REG_STACK_PUSH: begin
+            stack[sp] <= o_wb_data[7:0];
+            sp <= sp + 1;
           end
         endcase
         wb_write_ack <= 1;
