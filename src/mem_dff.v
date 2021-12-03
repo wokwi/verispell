@@ -22,7 +22,7 @@ module spell_mem_dff (
   reg [7:0] code_mem[255:0];
   reg [7:0] data_mem[255:0];
   reg [1:0] cycles;
-  
+
   integer i;
 
   always @(posedge clock) begin
