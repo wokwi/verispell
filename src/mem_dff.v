@@ -17,8 +17,6 @@ module spell_mem_dff (
     output reg data_ready
 );
 
-  `include "memtypes.v"
-
   reg [7:0] code_mem[255:0];
   reg [7:0] data_mem[255:0];
   reg [1:0] cycles;
@@ -42,14 +40,14 @@ module spell_mem_dff (
           data_ready <= 1;
           if (write) begin
             case (memory_type)
-              MemoryTypeData: data_mem[addr] <= data_in;
-              MemoryTypeCode: code_mem[addr] <= data_in;
+              `MemoryTypeData: data_mem[addr] <= data_in;
+              `MemoryTypeCode: code_mem[addr] <= data_in;
               default: data_ready <= 1'bx;
             endcase
           end else begin
             case (memory_type)
-              MemoryTypeData: data_out <= data_mem[addr];
-              MemoryTypeCode: data_out <= code_mem[addr];
+              `MemoryTypeData: data_out <= data_mem[addr];
+              `MemoryTypeCode: data_out <= code_mem[addr];
               default: data_ready <= 1'bx;
             endcase
           end

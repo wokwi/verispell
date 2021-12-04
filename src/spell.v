@@ -21,7 +21,6 @@ module spell (
     output wire        o_wb_ack,   // request is completed 
     output reg  [31:0] o_wb_data   // output data
 );
-  `include "memtypes.v"
 
   localparam StateFetch = 3'd0;
   localparam StateFetchData = 3'd1;
@@ -212,7 +211,7 @@ module spell (
           StateFetch: begin
             // Read next instruction from code memory
             mem_select <= 1;
-            mem_type <= MemoryTypeCode;
+            mem_type <= `MemoryTypeCode;
             mem_addr <= pc;
             mem_write_en <= 0;
             if (mem_data_ready) begin
@@ -224,7 +223,7 @@ module spell (
           StateFetchData: begin
             // Read data for instruction from either code or data memory
             mem_select <= 1;
-            mem_type <= (opcode == "?") ? MemoryTypeCode : MemoryTypeData;
+            mem_type <= (opcode == "?") ? `MemoryTypeCode : `MemoryTypeData;
             mem_addr <= stack_top;
             mem_write_en <= 0;
             if (mem_data_ready) begin
@@ -246,7 +245,7 @@ module spell (
             if (stack_write_count == 2) begin
               stack[next_sp-2] = set_stack_belowtop;
             end
-            if (memory_write_type == MemoryTypeData || memory_write_type == MemoryTypeCode) begin
+            if (memory_write_type == `MemoryTypeData || memory_write_type == `MemoryTypeCode) begin
               state <= StateStore;
             end else if (sleep || single_step) begin
               state <= StateSleep;
