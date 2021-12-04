@@ -82,6 +82,7 @@ module spell (
   wire wb_read = i_wb_stb && i_wb_cyc && !i_wb_we;
   wire wb_write = i_wb_stb && i_wb_cyc && i_wb_we;
   wire [23:0] wb_addr = i_wb_addr[23:0];
+  reg prev_wb_write;
 
   wire [4:0] wb_stack_addr = wb_addr[4:0];
 
@@ -179,7 +180,9 @@ module spell (
       single_step <= 0;
       out_of_order_exec <= 0;
       wb_write_ack <= 0;
+      prev_wb_write <= 0;
     end else begin
+      prev_wb_write <= wb_write;
       if (wb_write) begin
         case (wb_addr)
           REG_PC: pc <= i_wb_data[7:0];
@@ -199,8 +202,8 @@ module spell (
           end
           REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
           REG_STACK_TOP: stack[stack_top_index] <= o_wb_data[7:0];
-          REG_STACK_PUSH: begin
-            stack[sp] <= o_wb_data[7:0];
+          REG_STACK_PUSH: if (!prev_wb_write) begin
+            stack[sp] <= i_wb_data[7:0];
             sp <= sp + 1;
           end
         endcase
