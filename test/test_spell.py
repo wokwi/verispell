@@ -431,3 +431,30 @@ async def test_data_mem_regs(dut):
     assert logic_data['top'] == 11
 
     clock_sig.kill()
+
+
+@cocotb.test()
+async def test_intg_multiply(dut):
+    """
+    SPELL integration test: multiplies two numbers
+    """
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.write_program([
+        10, 11, 
+        '1', 'w',
+        0, 'x',
+        'x', '1', 'r', '+',
+        'x', 6, '@',
+        '1', 'r', '-',
+        'z', 
+    ])
+    await spell.execute()
+
+    logic_data = spell.logic_read()
+    assert logic_data['sp'] == 1
+    assert logic_data['top'] == 110
+
+    clock_sig.kill()
