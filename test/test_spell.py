@@ -381,3 +381,53 @@ async def test_code_mem_write(dut):
     assert logic_data['top'] == 5
 
     clock_sig.kill()
+
+
+@cocotb.test()
+async def test_data_mem(dut):
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.write_program([10, 4, 'w', 15, 4, 'r', 'z'])
+    await spell.execute()
+
+    logic_data = spell.logic_read()
+    assert logic_data['pc'] == 7
+    assert logic_data['sp'] == 2
+    assert logic_data['top'] == 10
+
+    clock_sig.kill()
+
+
+@cocotb.test()
+async def test_data_mem_regs(dut):
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    # Write RAM through Wishbone registers
+    await spell.push(255)
+    await spell.push(2)
+    await spell.exec_step('w')
+
+    sp = await spell.wb_read(reg_sp)
+    assert sp == 0
+
+    await spell.write_program([2, 'r', 11, 3, 'w', 'z'])
+    await spell.execute()
+
+    logic_data = spell.logic_read()
+    assert logic_data['pc'] == 6
+    assert logic_data['sp'] == 1
+    assert logic_data['top'] == 255
+
+    # Now read RAM through Wishbone registers and compare
+    await spell.push(3)
+    await spell.exec_step('r')
+
+    logic_data = spell.logic_read()
+    assert logic_data['sp'] == 2
+    assert logic_data['top'] == 11
+
+    clock_sig.kill()
