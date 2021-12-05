@@ -195,7 +195,7 @@ module spell (
           REG_PC: pc <= i_wb_data[7:0];
           REG_SP: sp <= i_wb_data[4:0];
           REG_EXEC: begin
-            opcode <= i_wb_data[7:0];
+            opcode = i_wb_data[7:0];
             state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
             single_step <= 1;
             out_of_order_exec <= 1;
@@ -225,9 +225,9 @@ module spell (
             mem_type <= `MemoryTypeCode;
             mem_addr <= pc;
             mem_write_en <= 0;
-            if (mem_data_ready) begin
+            if (mem_select && mem_data_ready) begin
               mem_select <= 0;
-              opcode <= mem_read_value;
+              opcode = mem_read_value;
               state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
             end
           end
@@ -237,7 +237,7 @@ module spell (
             mem_type <= (opcode == "?") ? `MemoryTypeCode : `MemoryTypeData;
             mem_addr <= stack_top;
             mem_write_en <= 0;
-            if (mem_data_ready) begin
+            if (mem_select && mem_data_ready) begin
               mem_select <= 0;
               memory_input <= mem_read_value;
               state <= StateExecute;

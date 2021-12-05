@@ -347,3 +347,37 @@ async def test_stop(dut):
     assert logic_data['sp'] == 0
 
     clock_sig.kill()
+
+
+@cocotb.test()
+async def test_code_mem_read(dut):
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.write_program([4, '?', 'z', 0, 45])
+    await spell.execute()
+
+    logic_data = spell.logic_read()
+    assert logic_data['pc'] == 3
+    assert logic_data['sp'] == 1
+    assert logic_data['top'] == 45
+
+    clock_sig.kill()
+
+
+@cocotb.test()
+async def test_code_mem_write(dut):
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.write_program([5, 3, '!', 'z', 'z'])
+    await spell.execute()
+
+    logic_data = spell.logic_read()
+    assert logic_data['pc'] == 5
+    assert logic_data['sp'] == 1
+    assert logic_data['top'] == 5
+
+    clock_sig.kill()
