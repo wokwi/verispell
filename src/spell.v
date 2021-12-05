@@ -22,9 +22,9 @@ module spell (
     output reg  [31:0] o_wb_data,  // output data
 
     // GPIO
-    input  wire [`MPRJ_IO_PADS-1:0] io_in,  
-    output wire [`MPRJ_IO_PADS-1:0] io_out, 
-    output wire [`MPRJ_IO_PADS-1:0] io_oeb // out enable bar (low active)
+    input  wire [`MPRJ_IO_PADS-1:0] io_in,
+    output wire [`MPRJ_IO_PADS-1:0] io_out,
+    output wire [`MPRJ_IO_PADS-1:0] io_oeb   // out enable bar (low active)
 );
 
   localparam StateFetch = 3'd0;
@@ -78,7 +78,8 @@ module spell (
 
   // Delay related registers
   reg [23:0] cycles_per_ms;
-  reg [23:0] delay_counter;
+  reg [23:0] delay_cycles;
+  reg [7:0] delay_counter;
 
   // Wishbone registers
   reg wb_read_ack;
@@ -186,6 +187,7 @@ module spell (
       out_of_order_exec <= 0;
       wb_write_ack <= 0;
       prev_wb_write <= 0;
+      cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
     end else begin
       prev_wb_write <= wb_write;
       if (wb_write) begin
@@ -207,7 +209,8 @@ module spell (
           end
           REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
           REG_STACK_TOP: stack[stack_top_index] <= o_wb_data[7:0];
-          REG_STACK_PUSH: if (!prev_wb_write) begin
+          REG_STACK_PUSH:
+          if (!prev_wb_write) begin
             stack[sp] <= i_wb_data[7:0];
             sp <= sp + 1;
           end
@@ -257,8 +260,9 @@ module spell (
               state <= StateStore;
             end else if (sleep || single_step) begin
               state <= StateSleep;
-            end else if (delay_amount != 8'b0) begin
-              delay_counter <= cycles_per_ms;
+            end else if (delay_amount != 8'b0 && cycles_per_ms != 24'b0) begin
+              delay_counter <= delay_amount - 1;
+              delay_cycles <= 0;
               state <= StateDelay;
             end else begin
               state <= StateFetch;
@@ -278,9 +282,14 @@ module spell (
             // The only way to leave this state is via CPU intervention.
           end
           StateDelay: begin
-            delay_counter <= delay_counter - 1;
-            if (delay_counter == 0) begin
-              state <= single_step ? StateSleep : StateFetch;
+            if (delay_cycles + 1 == cycles_per_ms) begin
+              delay_counter <= delay_counter - 1;
+              delay_cycles  <= 0;
+              if (delay_counter == 0) begin
+                state <= single_step ? StateSleep : StateFetch;
+              end
+            end else begin
+              delay_cycles = delay_cycles + 1;
             end
           end
           default: state <= 3'bx;
