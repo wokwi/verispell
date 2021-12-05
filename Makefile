@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: © 2021 Uri Shaked <uri@wokwi.com>
 # SPDX-License-Identifier: MIT
 
+export COCOTB_REDUCED_LOG_FMT=1
+
 all: test_spell
 
 test_execute:
