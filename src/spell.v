@@ -37,7 +37,7 @@ module spell (
   localparam REG_PC = 24'h000;
   localparam REG_SP = 24'h004;
   localparam REG_EXEC = 24'h008;
-  localparam REG_RUN = 24'h00c;
+  localparam REG_CTRL = 24'h00c;
   localparam REG_CYCLES_PER_MS = 24'h010;
   localparam REG_STACK_TOP = 24'h014;
   localparam REG_STACK_PUSH = 24'h018;
@@ -159,7 +159,7 @@ module spell (
         REG_PC: o_wb_data <= {24'b0, pc};
         REG_SP: o_wb_data <= {27'b0, sp};
         REG_EXEC: o_wb_data <= {24'b0, opcode};
-        REG_RUN: o_wb_data <= {30'b0, single_step, state != StateSleep};
+        REG_CTRL: o_wb_data <= {30'b0, single_step, state != StateSleep};
         REG_CYCLES_PER_MS: o_wb_data <= {8'b0, cycles_per_ms};
         REG_STACK_TOP: o_wb_data <= {24'b0, stack_top};
         default: begin
@@ -200,7 +200,7 @@ module spell (
             single_step <= 1;
             out_of_order_exec <= 1;
           end
-          REG_RUN: begin
+          REG_CTRL: begin
             if (i_wb_data[0] && state == StateSleep) begin
               out_of_order_exec <= 0;
               state <= StateFetch;

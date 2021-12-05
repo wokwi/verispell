@@ -7,7 +7,7 @@ from cocotbext.wishbone.driver import WishboneMaster, WBOp
 reg_pc = 0x3000_0000
 reg_sp = 0x3000_0004
 reg_exec = 0x3000_0008
-reg_run = 0x3000_000c
+reg_ctrl = 0x3000_000c
 reg_cycles_per_ms = 0x3000_0010
 reg_stack_top = 0x3000_0014
 reg_stack_push = 0x3000_0018
@@ -69,18 +69,18 @@ class SpellController:
     async def ensure_cpu_stopped(self):
         logic = self.logic_read()
         while not logic['stopped']:
-            await self.wb_write(reg_run, 0b10)
+            await self.wb_write(reg_ctrl, 0b10)
             logic = self.logic_read()
 
     async def single_step(self):
         await self.ensure_cpu_stopped()
-        await self.wb_write(reg_run, 0b11)
+        await self.wb_write(reg_ctrl, 0b11)
         await self.ensure_cpu_stopped()
 
     async def execute(self, wait=True):
         await self.ensure_cpu_stopped()
-        await self.wb_write(reg_run, 0b01)
-        while wait and (await self.wb_read(reg_run) & 1):
+        await self.wb_write(reg_ctrl, 0b01)
+        while wait and (await self.wb_read(reg_ctrl) & 1):
             pass
 
     async def exec_step(self, opcode):
