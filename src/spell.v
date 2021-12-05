@@ -19,7 +19,12 @@ module spell (
     input  wire [31:0] i_wb_addr,  // address
     input  wire [31:0] i_wb_data,  // incoming data
     output wire        o_wb_ack,   // request is completed 
-    output reg  [31:0] o_wb_data   // output data
+    output reg  [31:0] o_wb_data,  // output data
+
+    // GPIO
+    input  wire [`MPRJ_IO_PADS-1:0] io_in,  
+    output wire [`MPRJ_IO_PADS-1:0] io_out, 
+    output wire [`MPRJ_IO_PADS-1:0] io_oeb // out enable bar (low active)
 );
 
   localparam StateFetch = 3'd0;
