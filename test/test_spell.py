@@ -432,6 +432,39 @@ async def test_data_mem_regs(dut):
 
     clock_sig.kill()
 
+@cocotb.test()
+async def test_io(dut):
+    PIN = 0x36
+    DDR = 0x37
+    PORT = 0x38
+
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.push(0xf0)
+    await spell.push(DDR)
+    await spell.exec_step('w')
+    assert dut.io_oeb.value == 0x0f
+
+    await spell.push(0x30)
+    await spell.push(PORT)
+    await spell.exec_step('w')
+    assert dut.io_out.value == 0x30
+
+    await spell.push(0x50)
+    await spell.push(PIN)
+    await spell.exec_step('w')
+    assert dut.io_out.value == 0x60
+
+    dut.io_in = 0x7a
+    await spell.push(PIN)
+    await spell.exec_step('r')
+    logic_data = spell.logic_read()
+    assert logic_data['sp'] == 1
+    assert logic_data['top'] == 0x7a
+
+    clock_sig.kill()
 
 @cocotb.test()
 async def test_intg_multiply(dut):
