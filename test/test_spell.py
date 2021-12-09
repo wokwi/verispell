@@ -444,11 +444,11 @@ async def test_intg_multiply(dut):
 
     await spell.write_program([
         10, 11, 
-        '1', 'w',
+        1, 'w',
         0, 'x',
-        'x', '1', 'r', '+',
+        'x', 1, 'r', '+',
         'x', 6, '@',
-        '1', 'r', '-',
+        1, 'r', '-',
         'z', 
     ])
     await spell.execute()

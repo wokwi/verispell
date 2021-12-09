@@ -22,9 +22,19 @@ module spell (
     output reg  [31:0] o_wb_data,  // output data
 
     // GPIO
-    input  wire [`MPRJ_IO_PADS-1:0] io_in,
-    output wire [`MPRJ_IO_PADS-1:0] io_out,
-    output wire [`MPRJ_IO_PADS-1:0] io_oeb   // out enable bar (low active)
+    input  wire [7:0] io_in,
+    output wire [7:0] io_out,
+    output wire [7:0] io_oeb,  // out enable bar (low active)
+
+    // Wishbone OpenRAM
+    input wire [31:0] sram_dat_i,
+    input wire sram_ack_i,
+    output wire sram_cyc_o,
+    output wire sram_stb_o,
+    output wire sram_we_o,
+    output wire [3:0] sram_sel_o,
+    output wire [31:0] sram_adr_o,
+    output wire [31:0] sram_dat_o
 );
 
   localparam StateFetch = 3'd0;
@@ -68,6 +78,7 @@ module spell (
   wire [7:0] stack_top = stack[stack_top_index];
 
   // Memory related registers
+  reg sram_enable;
   reg mem_select;
   reg [7:0] mem_addr;
   reg [7:0] mem_write_value;
@@ -133,16 +144,30 @@ module spell (
       .sleep(sleep)
   );
 
-  spell_mem_dff mem (
+  spell_mem mem (
       .reset(reset),
       .clock(clock),
+      .sram_enable(sram_enable),
       .select(mem_select),
       .addr(mem_addr),
       .data_in(mem_write_value),
       .memory_type(mem_type),
       .write(mem_write_en),
       .data_out(mem_read_value),
-      .data_ready(mem_data_ready)
+      .data_ready(mem_data_ready),
+      // IO
+      .io_in(io_in),
+      .io_out(io_out),
+      .io_oeb(io_oeb),
+      // OpenRAM
+      .sram_dat_i(sram_dat_i),
+      .sram_ack_i(sram_ack_i),
+      .sram_cyc_o(sram_cyc_o),
+      .sram_stb_o(sram_stb_o),
+      .sram_we_o(sram_we_o),
+      .sram_sel_o(sram_sel_o),
+      .sram_adr_o(sram_adr_o),
+      .sram_dat_o(sram_dat_o)
   );
 
   function is_data_opcode(input [7:0] opcode);
@@ -159,7 +184,7 @@ module spell (
         REG_PC: o_wb_data <= {24'b0, pc};
         REG_SP: o_wb_data <= {27'b0, sp};
         REG_EXEC: o_wb_data <= {24'b0, opcode};
-        REG_CTRL: o_wb_data <= {30'b0, single_step, state != StateSleep};
+        REG_CTRL: o_wb_data <= {29'b0, sram_enable, single_step, state != StateSleep};
         REG_CYCLES_PER_MS: o_wb_data <= {8'b0, cycles_per_ms};
         REG_STACK_TOP: o_wb_data <= {24'b0, stack_top};
         default: begin
@@ -187,6 +212,7 @@ module spell (
       out_of_order_exec <= 0;
       wb_write_ack <= 0;
       prev_wb_write <= 0;
+      sram_enable <= 0;
       cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
     end else begin
       prev_wb_write <= wb_write;
@@ -206,6 +232,7 @@ module spell (
               state <= StateFetch;
             end
             single_step <= i_wb_data[1];
+            sram_enable <= i_wb_data[2];
           end
           REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
           REG_STACK_TOP: stack[stack_top_index] <= o_wb_data[7:0];

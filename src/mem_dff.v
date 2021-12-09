@@ -17,8 +17,12 @@ module spell_mem_dff (
     output reg data_ready
 );
 
-  reg [7:0] code_mem[255:0];
-  reg [7:0] data_mem[255:0];
+  localparam code_size = 32;
+  localparam data_size = 8;
+
+  reg [7:0] code_mem[code_size-1:0];
+  reg [7:0] data_mem[data_size-1:0];
+
   reg [1:0] cycles;
 
   integer i;
@@ -27,8 +31,8 @@ module spell_mem_dff (
     if (reset) begin
       cycles <= 0;
       data_ready <= 0;
-      for (i = 0; i < 256; i++) code_mem[i] = 0;
-      for (i = 0; i < 256; i++) data_mem[i] = 0;
+      for (i = 0; i < code_size; i++) code_mem[i] = 0;
+      for (i = 0; i < data_size; i++) data_mem[i] = 0;
     end else begin
       if (!select) begin
         data_out   <= 8'bx;
@@ -40,14 +44,31 @@ module spell_mem_dff (
           data_ready <= 1;
           if (write) begin
             case (memory_type)
-              `MemoryTypeData: data_mem[addr] <= data_in;
-              `MemoryTypeCode: code_mem[addr] <= data_in;
+              `MemoryTypeData: begin
+                if (addr < data_size) begin
+                  data_mem[addr] <= data_in;
+                end
+              end
+              `MemoryTypeCode: begin
+                if (addr < code_size) begin
+                  code_mem[addr] <= data_in;
+                end
+              end
               default: data_ready <= 1'bx;
             endcase
           end else begin
+            data_out <= 8'b0;
             case (memory_type)
-              `MemoryTypeData: data_out <= data_mem[addr];
-              `MemoryTypeCode: data_out <= code_mem[addr];
+              `MemoryTypeData: begin
+                if (addr < data_size) begin
+                  data_out <= data_mem[addr];
+                end
+              end
+              `MemoryTypeCode: begin
+                if (addr < code_size) begin
+                  data_out <= code_mem[addr];
+                end
+              end
               default: data_ready <= 1'bx;
             endcase
           end
