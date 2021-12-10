@@ -18,6 +18,8 @@ test_mem_dff:
 test_spell:
 	iverilog -I src -s spell -s dump -o spell_test.out src/memtypes.v src/spell.v src/mem.v src/mem_dff.v src/mem_io.v src/execute.v test/dump_spell.v
 	MODULE=test.test_spell vvp -M $$(cocotb-config --prefix)/cocotb/libs -m libcocotbvpi_icarus ./spell_test.out
+
+test_spell_show: test_spell
 	gtkwave spell_test.vcd test/spell_test.gtkw
 
 test_gate_level:
