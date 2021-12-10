@@ -20,10 +20,15 @@ reg_ctrl = 0x3000_000c
 reg_cycles_per_ms = 0x3000_0010
 reg_stack_top = 0x3000_0014
 reg_stack_push = 0x3000_0018
+reg_int_enable = 0x3000_0020
+reg_int = 0x3000_0024
 
 CTRL_RUN = bit(0)
 CTRL_STEP = bit(1)
 CTRL_SRAM_ENABLE = bit(2)
+
+INTR_SLEEP = bit(0)
+INTR_STOP = bit(1)
 
 stateNames = ["Fetch", "FetchDat", "Execute",
               "Store", "Delay", "Sleep", "Invalid", "Invalid"]
@@ -123,6 +128,9 @@ class SpellController:
     async def push(self, value):
         await self.ensure_cpu_stopped()
         await self.wb_write(reg_stack_push, value)
+
+    async def set_pc(self, value):
+        await self.wb_write(reg_pc, value)
 
     async def set_sp(self, value):
         await self.wb_write(reg_sp, value)
@@ -531,6 +539,45 @@ async def test_rambus(dut):
     logic_data = spell.logic_read()
     assert logic_data['sp'] == 1
     assert logic_data['top'] == 78
+
+    clock_sig.kill()
+
+
+@cocotb.test()
+async def test_interrupts(dut):
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.write_program(['z'])
+    await spell.execute()
+    assert await spell.wb_read(reg_int) == INTR_SLEEP
+
+    assert dut.interrupt.value == 0
+    await spell.wb_write(reg_int_enable, INTR_SLEEP | INTR_STOP)
+    assert dut.interrupt.value == 1
+
+    # Clear the sleep interrupt, check that the interrupt line goes down
+    await spell.wb_write(reg_int, INTR_SLEEP)
+    assert dut.interrupt.value == 0
+    assert await spell.wb_read(reg_int) == 0
+
+    # Now check the stop interrupt
+    await spell.set_pc(0)
+    await spell.write_program([0xff])
+    await spell.execute()
+    assert dut.interrupt.value == 1
+    assert await spell.wb_read(reg_int) == INTR_STOP
+
+    await spell.wb_write(reg_int_enable, 0)
+    assert dut.interrupt.value == 0
+    await spell.wb_write(reg_int_enable, INTR_SLEEP | INTR_STOP)
+    assert dut.interrupt.value == 1
+
+    # Clear the STOP interrupt, check that the interrupt line goes down
+    await spell.wb_write(reg_int, INTR_STOP)
+    assert dut.interrupt.value == 0
+    assert await spell.wb_read(reg_int) == 0
 
     clock_sig.kill()
 

@@ -36,7 +36,10 @@ module spell (
     output wire [31:0] rambus_wb_dat_o,   // ram data out
     output wire [ 7:0] rambus_wb_addr_o,  // 8 bit address
     input  wire        rambus_wb_ack_i,   // ack
-    input  wire [31:0] rambus_wb_dat_i    // ram data in
+    input  wire [31:0] rambus_wb_dat_i,   // ram data in
+
+    // Interrupt
+    output wire interrupt
 );
 
   localparam StateFetch = 3'd0;
@@ -53,6 +56,12 @@ module spell (
   localparam REG_CYCLES_PER_MS = 24'h010;
   localparam REG_STACK_TOP = 24'h014;
   localparam REG_STACK_PUSH = 24'h018;
+  localparam REG_INT_ENABLE = 24'h20;
+  localparam REG_INT = 24'h24;
+
+  localparam INTR_SLEEP = 0;
+  localparam INTR_STOP = 1;
+  localparam INTR_COUNT = 2;
 
   reg [2:0] state;
   reg [7:0] pc;
@@ -71,6 +80,12 @@ module spell (
   wire [7:0] memory_write_data;
   wire [7:0] delay_amount;
   wire sleep;
+  wire stop;
+
+  // Interrupts
+  reg [INTR_COUNT-1:0] intr;
+  reg [INTR_COUNT-1:0] intr_enable;
+  assign interrupt = |(intr & intr_enable);
 
   // Out of order execution
   reg single_step;
@@ -145,7 +160,8 @@ module spell (
       .memory_write_addr(memory_write_addr),
       .memory_write_data(memory_write_data),
       .delay_amount(delay_amount),
-      .sleep(sleep)
+      .sleep(sleep),
+      .stop(stop)
   );
 
   spell_mem mem (
@@ -184,6 +200,7 @@ module spell (
       o_wb_data   <= 0;
       wb_read_ack <= 0;
     end else if (wb_read) begin
+      o_wb_data <= 0;
       case (wb_addr)
         REG_PC: o_wb_data <= {24'b0, pc};
         REG_SP: o_wb_data <= {27'b0, sp};
@@ -191,6 +208,8 @@ module spell (
         REG_CTRL: o_wb_data <= {29'b0, sram_enable, single_step, state != StateSleep};
         REG_CYCLES_PER_MS: o_wb_data <= {8'b0, cycles_per_ms};
         REG_STACK_TOP: o_wb_data <= {24'b0, stack_top};
+        REG_INT_ENABLE: o_wb_data[INTR_COUNT-1:0] <= intr_enable;
+        REG_INT: o_wb_data[INTR_COUNT-1:0] <= intr;
         default: begin
           o_wb_data <= 32'b0;
         end
@@ -217,6 +236,8 @@ module spell (
       wb_write_ack <= 0;
       prev_wb_write <= 0;
       sram_enable <= 0;
+      intr <= 0;
+      intr_enable <= 0;
       cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
     end else begin
       prev_wb_write <= wb_write;
@@ -245,6 +266,8 @@ module spell (
             stack[sp] <= i_wb_data[7:0];
             sp <= sp + 1;
           end
+          REG_INT_ENABLE: intr_enable <= i_wb_data[INTR_COUNT-1:0];
+          REG_INT: intr <= intr & ~i_wb_data[INTR_COUNT-1:0];
         endcase
         wb_write_ack <= 1;
       end else begin
@@ -281,6 +304,8 @@ module spell (
             mem_type <= memory_write_type;
             mem_addr <= memory_write_addr;
             mem_write_value <= memory_write_data;
+            if (sleep) intr[INTR_SLEEP] = 1'b1;
+            if (stop) intr[INTR_STOP] = 1'b1;
             if (stack_write_count == 1 || stack_write_count == 2) begin
               stack[next_sp-1] = set_stack_top;
             end
@@ -289,7 +314,7 @@ module spell (
             end
             if (memory_write_type == `MemoryTypeData || memory_write_type == `MemoryTypeCode) begin
               state <= StateStore;
-            end else if (sleep || single_step) begin
+            end else if (sleep || stop || single_step) begin
               state <= StateSleep;
             end else if (delay_amount != 8'b0 && cycles_per_ms != 24'b0) begin
               delay_counter <= delay_amount - 1;

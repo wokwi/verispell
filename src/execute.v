@@ -20,7 +20,8 @@ module spell_execute (
     output reg [7:0] memory_write_addr,
     output reg [1:0] memory_write_type,
     output reg [7:0] delay_amount,
-    output reg sleep
+    output reg sleep,
+    output reg stop
 );
 
   always @(*) begin
@@ -33,6 +34,7 @@ module spell_execute (
     memory_write_addr = 8'dx;
     memory_write_data = 8'dx;
     sleep = 0;
+    stop = 0;
     delay_amount = 0;
 
     case (opcode)
@@ -113,9 +115,8 @@ module spell_execute (
         set_stack_belowtop = stack_top;
         stack_write_count = 2;
       end
-      "z", 8'hff: begin
-        sleep = 1;
-      end
+      "z":   sleep = 1'b1;
+      8'hff: stop = 1'b1;
       default: begin
         set_stack_top = opcode;
         stack_write_count = 1;
