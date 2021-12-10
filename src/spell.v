@@ -26,15 +26,17 @@ module spell (
     output wire [7:0] io_out,
     output wire [7:0] io_oeb,  // out enable bar (low active)
 
-    // Wishbone OpenRAM
-    input wire [31:0] sram_dat_i,
-    input wire sram_ack_i,
-    output wire sram_cyc_o,
-    output wire sram_stb_o,
-    output wire sram_we_o,
-    output wire [3:0] sram_sel_o,
-    output wire [31:0] sram_adr_o,
-    output wire [31:0] sram_dat_o
+    // Shared RAM wishbone controller
+    output wire        rambus_wb_clk_o,   // clock, must run at system clock
+    output wire        rambus_wb_rst_o,   // reset
+    output wire        rambus_wb_stb_o,   // write strobe
+    output wire        rambus_wb_cyc_o,   // cycle
+    output wire        rambus_wb_we_o,    // write enable
+    output wire [ 3:0] rambus_wb_sel_o,   // write word select
+    output wire [31:0] rambus_wb_dat_o,   // ram data out
+    output wire [ 7:0] rambus_wb_addr_o,  // 8 bit address
+    input  wire        rambus_wb_ack_i,   // ack
+    input  wire [31:0] rambus_wb_dat_i    // ram data in
 );
 
   localparam StateFetch = 3'd0;
@@ -101,7 +103,9 @@ module spell (
   wire [23:0] wb_addr = i_wb_addr[23:0];
   reg prev_wb_write;
 
-  wire [4:0] wb_stack_addr = wb_addr[4:0];
+  // RAM bus clock and reset
+  assign rambus_wb_clk_o = clock;
+  assign rambus_wb_rst_o = reset;
 
   // Logic Analyzer Connections:
   // [       Stack Top     | State  |      SP      |         Opcode        |         PC          ]
@@ -160,14 +164,14 @@ module spell (
       .io_out(io_out),
       .io_oeb(io_oeb),
       // OpenRAM
-      .sram_dat_i(sram_dat_i),
-      .sram_ack_i(sram_ack_i),
-      .sram_cyc_o(sram_cyc_o),
-      .sram_stb_o(sram_stb_o),
-      .sram_we_o(sram_we_o),
-      .sram_sel_o(sram_sel_o),
-      .sram_adr_o(sram_adr_o),
-      .sram_dat_o(sram_dat_o)
+      .sram_stb_o(rambus_wb_stb_o),
+      .sram_cyc_o(rambus_wb_cyc_o),
+      .sram_we_o(rambus_wb_we_o),
+      .sram_sel_o(rambus_wb_sel_o),
+      .sram_dat_o(rambus_wb_dat_o),
+      .sram_addr_o(rambus_wb_addr_o),
+      .sram_ack_i(rambus_wb_ack_i),
+      .sram_dat_i(rambus_wb_dat_i)
   );
 
   function is_data_opcode(input [7:0] opcode);

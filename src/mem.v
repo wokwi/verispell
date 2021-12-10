@@ -29,7 +29,7 @@ module spell_mem (
     output wire sram_stb_o,
     output wire sram_we_o,
     output wire [3:0] sram_sel_o,
-    output wire [31:0] sram_adr_o,
+    output wire [7:0] sram_addr_o,
     output wire [31:0] sram_dat_o
 );
 
@@ -42,12 +42,13 @@ module spell_mem (
   wire mem_select = code_select || data_mem_select;
   wire sram_select = mem_select && sram_enable;
 
-  assign sram_cyc_o = sram_select;
-  assign sram_stb_o = sram_select;
-  assign sram_we_o  = write;
-  assign sram_sel_o = 4'b1111;
-  assign sram_adr_o = {23'b0, data_select, addr};
-  assign sram_dat_o = {24'b0, data_in};
+  wire [1:0] sram_byte_index = addr[1:0];
+  assign sram_cyc_o  = sram_select;
+  assign sram_stb_o  = sram_select;
+  assign sram_we_o   = write;
+  assign sram_sel_o  = 1 << sram_byte_index;
+  assign sram_addr_o = {1'b0, data_select, addr[7:2]};
+  assign sram_dat_o  = {data_in, data_in, data_in, data_in};
 
   wire io_data_ready;
   wire dff_data_ready;
@@ -89,7 +90,12 @@ module spell_mem (
     if (data_io_select) begin
       data_out = io_data_out;
     end else if (sram_enable) begin
-      data_out = sram_dat_i[7:0];
+      case (sram_byte_index)
+        0: data_out = sram_dat_i[7:0];
+        1: data_out = sram_dat_i[15:8];
+        2: data_out = sram_dat_i[23:16];
+        3: data_out = sram_dat_i[31:24];
+      endcase
     end else begin
       data_out = dff_data_out;
     end
