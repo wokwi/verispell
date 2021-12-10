@@ -1,7 +1,16 @@
+# SPDX-FileCopyrightText: © 2021 Uri Shaked <uri@wokwi.com>
+# SPDX-License-Identifier: MIT
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 from cocotbext.wishbone.driver import WishboneMaster, WBOp
+from test.wb_ram import WishboneRAM
+
+
+def bit(n):
+    return 1 << n
+
 
 # Wishbone bus registers
 reg_pc = 0x3000_0000
@@ -12,17 +21,32 @@ reg_cycles_per_ms = 0x3000_0010
 reg_stack_top = 0x3000_0014
 reg_stack_push = 0x3000_0018
 
+CTRL_RUN = bit(0)
+CTRL_STEP = bit(1)
+CTRL_SRAM_ENABLE = bit(2)
+
 stateNames = ["Fetch", "FetchDat", "Execute",
               "Store", "Delay", "Sleep", "Invalid", "Invalid"]
 
 wishbone_signals = {
-    "cyc":  "i_wb_cyc",
-    "stb":  "i_wb_stb",
-    "we":   "i_wb_we",
-    "adr":  "i_wb_addr",
+    "cyc": "i_wb_cyc",
+    "stb": "i_wb_stb",
+    "we": "i_wb_we",
+    "adr": "i_wb_addr",
     "datwr": "i_wb_data",
     "datrd": "o_wb_data",
-    "ack":  "o_wb_ack"
+    "ack": "o_wb_ack",
+}
+
+ram_bus_signals = {
+    "cyc": "rambus_wb_cyc_o",
+    "stb": "rambus_wb_stb_o",
+    "we": "rambus_wb_we_o",
+    "adr": "rambus_wb_addr_o",
+    "sel": "rambus_wb_sel_o",
+    "datwr": "rambus_wb_dat_o",
+    "datrd": "rambus_wb_dat_i",
+    "ack": "rambus_wb_ack_i",
 }
 
 
@@ -46,6 +70,9 @@ class SpellController:
     def __init__(self, dut, wishbone):
         self._dut = dut
         self._wishbone = wishbone
+        self._ctrl_flags = 0
+        self._wbram = WishboneRAM(dut, dut.rambus_wb_clk_o, ram_bus_signals)
+        self.sram = self._wbram.data
 
     async def wb_read(self, addr):
         res = await self._wishbone.send_cycle([WBOp(addr)])
@@ -53,6 +80,9 @@ class SpellController:
 
     async def wb_write(self, addr, value):
         await self._wishbone.send_cycle([WBOp(addr, value)])
+
+    def enable_rambus(self):
+        self._ctrl_flags = CTRL_SRAM_ENABLE
 
     def logic_read(self):
         value = self._dut.la_data_out.value
@@ -69,18 +99,18 @@ class SpellController:
     async def ensure_cpu_stopped(self):
         logic = self.logic_read()
         while not logic['stopped']:
-            await self.wb_write(reg_ctrl, 0b10)
+            await self.wb_write(reg_ctrl, self._ctrl_flags | CTRL_STEP)
             logic = self.logic_read()
 
     async def single_step(self):
         await self.ensure_cpu_stopped()
-        await self.wb_write(reg_ctrl, 0b11)
+        await self.wb_write(reg_ctrl, self._ctrl_flags | CTRL_STEP | CTRL_RUN)
         await self.ensure_cpu_stopped()
 
     async def execute(self, wait=True):
         await self.ensure_cpu_stopped()
-        await self.wb_write(reg_ctrl, 0b01)
-        while wait and (await self.wb_read(reg_ctrl) & 1):
+        await self.wb_write(reg_ctrl, self._ctrl_flags | CTRL_RUN)
+        while wait and (await self.wb_read(reg_ctrl) & CTRL_RUN):
             pass
 
     async def exec_step(self, opcode):
@@ -432,6 +462,7 @@ async def test_data_mem_regs(dut):
 
     clock_sig.kill()
 
+
 @cocotb.test()
 async def test_io(dut):
     PIN = 0x36
@@ -466,6 +497,44 @@ async def test_io(dut):
 
     clock_sig.kill()
 
+
+@cocotb.test()
+async def test_rambus(dut):
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    spell.enable_rambus()
+
+    # Write a small test program directly to RAM
+    spell.sram[0] = 0x55
+    spell.sram[1] = 166
+    spell.sram[2] = ord('w')
+    spell.sram[3] = 0x42
+    spell.sram[4] = 142
+    spell.sram[5] = ord('!')
+    spell.sram[6] = 100
+    spell.sram[7] = ord('r')
+    spell.sram[8] = ord('z')
+
+    # Write some data at data memory location 100 (address 256 + 100)
+    spell.sram[256 + 100] = 78
+
+    # Run the test program
+    await spell.execute()
+
+    # Check that sram writes went successfully
+    assert spell.sram[256 + 166] == 0x55
+    assert spell.sram[142] == 0x42
+
+    # Check that sram read went successfully
+    logic_data = spell.logic_read()
+    assert logic_data['sp'] == 1
+    assert logic_data['top'] == 78
+
+    clock_sig.kill()
+
+
 @cocotb.test()
 async def test_intg_multiply(dut):
     """
@@ -476,13 +545,13 @@ async def test_intg_multiply(dut):
     await reset(dut)
 
     await spell.write_program([
-        10, 11, 
+        10, 11,
         1, 'w',
         0, 'x',
         'x', 1, 'r', '+',
         'x', 6, '@',
         1, 'r', '-',
-        'z', 
+        'z',
     ])
     await spell.execute()
 
