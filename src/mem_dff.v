@@ -36,29 +36,29 @@ module spell_mem_dff (
     end else begin
       if (!select) begin
         data_out   <= 8'bx;
-        data_ready <= 0;
+        data_ready <= 1'b0;
+`ifdef SPELL_DFF_DELAY
         cycles     <= 2'b11;
-      end else begin
+`endif /* SPELL_DFF_DELAY */
+      end else if (cycles > 0) begin
         cycles <= cycles - 1;
-        if (cycles == 0 && !data_ready) begin
-          data_ready <= 1;
-          if (write) begin
-            if (memory_type_data && addr < data_size) begin
-              data_mem[addr] <= data_in;
-            end else if (!memory_type_data && addr < code_size) begin
-              code_mem[addr] <= data_in;
-            end
-          end else begin
-            data_out <= 8'b0;
-            if (memory_type_data && addr < data_size) begin
-              data_out <= data_mem[addr];
-            end else if (!memory_type_data && addr < code_size) begin
-              data_out <= code_mem[addr];
-            end
+      end else begin
+        data_ready <= 1'b1;
+        if (write) begin
+          if (memory_type_data && addr < data_size) begin
+            data_mem[addr] <= data_in;
+          end else if (!memory_type_data && addr < code_size) begin
+            code_mem[addr] <= data_in;
+          end
+        end else begin
+          data_out <= 8'b0;
+          if (memory_type_data && addr < data_size) begin
+            data_out <= data_mem[addr];
+          end else if (!memory_type_data && addr < code_size) begin
+            data_out <= code_mem[addr];
           end
         end
       end
     end
   end
-
 endmodule
