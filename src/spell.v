@@ -334,7 +334,6 @@ module spell (
             end
           end
           StateSleep: begin
-            // TODO: raise interrupt to let the CPU know we're sleeping.
             // The only way to leave this state is via CPU intervention.
           end
           StateDelay: begin
