@@ -235,6 +235,7 @@ module spell (
       out_of_order_exec <= 0;
       wb_write_ack <= 0;
       prev_wb_write <= 0;
+      mem_write_en <= 0;
       sram_enable <= 0;
       intr <= 0;
       intr_enable <= 0;
@@ -334,6 +335,7 @@ module spell (
             mem_write_en <= 1;
             if (mem_data_ready) begin
               mem_select <= 0;
+              mem_write_en <= 0;
               state <= single_step ? StateSleep : StateFetch;
             end
           end
