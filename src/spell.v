@@ -75,7 +75,8 @@ module spell (
   wire [1:0] stack_write_count;
   wire [7:0] set_stack_top;
   wire [7:0] set_stack_belowtop;
-  wire [1:0] memory_write_type;
+  wire memory_write_en;
+  wire memory_write_type_data;
   wire [7:0] memory_write_addr;
   wire [7:0] memory_write_data;
   wire [7:0] delay_amount;
@@ -97,9 +98,9 @@ module spell (
   // Memory related registers
   reg sram_enable;
   reg mem_select;
+  reg mem_type_data;
   reg [7:0] mem_addr;
   reg [7:0] mem_write_value;
-  reg [1:0] mem_type;
   reg mem_write_en;
   wire [7:0] mem_read_value;
   wire mem_data_ready;
@@ -156,7 +157,8 @@ module spell (
       .stack_write_count(stack_write_count),
       .set_stack_top(set_stack_top),
       .set_stack_belowtop(set_stack_belowtop),
-      .memory_write_type(memory_write_type),
+      .memory_write_en(memory_write_en),
+      .memory_write_type_data(memory_write_type_data),
       .memory_write_addr(memory_write_addr),
       .memory_write_data(memory_write_data),
       .delay_amount(delay_amount),
@@ -171,7 +173,7 @@ module spell (
       .select(mem_select),
       .addr(mem_addr),
       .data_in(mem_write_value),
-      .memory_type(mem_type),
+      .memory_type_data(mem_type_data),
       .write(mem_write_en),
       .data_out(mem_read_value),
       .data_ready(mem_data_ready),
@@ -231,17 +233,16 @@ module spell (
       for (j = 0; j < 32; j++) stack[j] = 0;
       opcode <= 0;
       mem_select <= 0;
+      mem_write_en <= 0;
       single_step <= 0;
       out_of_order_exec <= 0;
       wb_write_ack <= 0;
       prev_wb_write <= 0;
-      mem_write_en <= 0;
       sram_enable <= 0;
       intr <= 0;
       intr_enable <= 0;
       cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
       delay_cycles <= 0;
-      mem_type <= `MemoryTypeNone;
     end else begin
       prev_wb_write <= wb_write;
       if (wb_write) begin
@@ -281,7 +282,7 @@ module spell (
           StateFetch: begin
             // Read next instruction from code memory
             mem_select <= 1;
-            mem_type <= `MemoryTypeCode;
+            mem_type_data <= 0;
             mem_addr <= pc;
             mem_write_en <= 0;
             if (mem_select && mem_data_ready) begin
@@ -293,7 +294,7 @@ module spell (
           StateFetchData: begin
             // Read data for instruction from either code or data memory
             mem_select <= 1;
-            mem_type <= (opcode == "?") ? `MemoryTypeCode : `MemoryTypeData;
+            mem_type_data <= (opcode == "r") ? 1'b1 : 1'b0;
             mem_addr <= stack_top;
             mem_write_en <= 0;
             if (mem_select && mem_data_ready) begin
@@ -306,7 +307,7 @@ module spell (
             // Execute a single instruction
             pc <= next_pc;
             sp <= next_sp;
-            mem_type <= memory_write_type;
+            mem_type_data <= memory_write_type_data;
             mem_addr <= memory_write_addr;
             mem_write_value <= memory_write_data;
             if (sleep) intr[INTR_SLEEP] = 1'b1;
@@ -317,7 +318,7 @@ module spell (
             if (stack_write_count == 2) begin
               stack[next_sp-2] = set_stack_belowtop;
             end
-            if (memory_write_type == `MemoryTypeData || memory_write_type == `MemoryTypeCode) begin
+            if (memory_write_en) begin
               state <= StateStore;
             end else if (sleep || stop || single_step) begin
               state <= StateSleep;
@@ -365,7 +366,6 @@ module spell (
     if (f_init) assume (reset);
     if (!reset) begin
       assert (!sleep || !stop);
-      assert (mem_type == `MemoryTypeNone || mem_type == `MemoryTypeCode || mem_type == `MemoryTypeData);
       assert(
         state == StateFetch ||
         state == StateFetchData ||

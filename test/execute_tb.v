@@ -16,7 +16,8 @@ module test_spell_execute ();
   wire [1:0] stack_write_count;
   wire [7:0] set_stack_top;
   wire [7:0] set_stack_belowtop;
-  wire [1:0] memory_write_type;
+  wire memory_write_en;
+  wire memory_write_type_data;
   wire [7:0] memory_write_addr;
   wire [7:0] memory_write_data;
   wire [7:0] delay_amount;
@@ -39,7 +40,8 @@ module test_spell_execute ();
       .stack_write_count(stack_write_count),
       .set_stack_top(set_stack_top),
       .set_stack_belowtop(set_stack_belowtop),
-      .memory_write_type(memory_write_type),
+      .memory_write_en(memory_write_en),
+      .memory_write_type_data(memory_write_type_data),
       .memory_write_addr(memory_write_addr),
       .memory_write_data(memory_write_data),
       .delay_amount(delay_amount),

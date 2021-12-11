@@ -12,7 +12,7 @@ module spell_mem (
     input wire select,
     input wire [7:0] addr,
     input wire [7:0] data_in,
-    input wire [1:0] memory_type,
+    input wire memory_type_data,
     input wire write,
     output reg [7:0] data_out,
     output wire data_ready,
@@ -33,9 +33,9 @@ module spell_mem (
     output wire [31:0] sram_dat_o
 );
 
-  wire code_select = select && memory_type == `MemoryTypeCode;
+  wire code_select = select && !memory_type_data;
 
-  wire data_select = select && memory_type == `MemoryTypeData;
+  wire data_select = select && memory_type_data;
   wire data_mem_select = data_select && (addr < 8'h20 || addr >= 8'h60);
   wire data_io_select = data_select && (addr >= 8'h20 && addr < 8'h60);
 
@@ -80,7 +80,7 @@ module spell_mem (
       .select(!sram_select && mem_select),
       .addr(addr),
       .data_in(data_in),
-      .memory_type(memory_type),
+      .memory_type_data(memory_type_data),
       .write(write),
       .data_out(dff_data_out),
       .data_ready(dff_data_ready)
@@ -100,13 +100,5 @@ module spell_mem (
       data_out = dff_data_out;
     end
   end
-
-`ifdef FORMAL
-  always @(*) begin
-    if (!reset && select) begin
-      assert (memory_type == `MemoryTypeCode || memory_type == `MemoryTypeData);
-    end
-  end
-`endif
 
 endmodule

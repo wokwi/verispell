@@ -6,14 +6,12 @@
 `default_nettype none
 
 module test_spell_mem_dff ();
-  `include "memtypes.v"
-
   reg reset;
   reg clock;
   reg select;
   reg [7:0] addr;
   reg [7:0] data_in;
-  reg [1:0] memory_type;
+  reg memory_type_data;
   reg write;
   wire [7:0] data_out;
   wire data_ready;
@@ -24,7 +22,7 @@ module test_spell_mem_dff ();
       .select(select),
       .addr(addr),
       .data_in(data_in),
-      .memory_type(memory_type),
+      .memory_type_data(memory_type_data),
       .write(write),
       .data_out(data_out),
       .data_ready(data_ready)
@@ -43,64 +41,69 @@ module test_spell_mem_dff ();
     #20 reset = 0;
     #10 reset = 0;
 
-    // Write a byte to data location 50
-    addr = 50;
+    // Write a byte to data location 5
+    addr = 5;
     data_in = 42;
     write = 1;
-    memory_type = MemoryTypeData;
+    memory_type_data = 1;
     select = 1;
     #90 select = 0;
     data_in = 0;
     #10 reset = 0;
 
-    // Read a byte from code location 50
-    addr = 50;
+    // Read a byte from code location 5
+    addr = 5;
     write = 0;
-    memory_type = MemoryTypeCode;
+    memory_type_data = 0;
     select = 1;
-    #90 select = 0;
+    #80 `assert(data_out, 0);
+    select = 0;
     #10 reset = 0;
 
-    // Read a byte from data location 50
-    addr = 50;
+    // Read a byte from data location 5
+    addr = 5;
     write = 0;
-    memory_type = MemoryTypeData;
+    memory_type_data = 1;
     select = 1;
-    #90 select = 0;
+    #80 `assert(data_out, 42);
+    select = 0;
     #10 reset = 0;
 
-    // Read a byte from data location 60
-    addr = 60;
+    // Read a byte from data location 6
+    addr = 6;
     write = 0;
-    memory_type = MemoryTypeData;
+    memory_type_data = 1;
     select = 1;
-    #90 select = 0;
+    #80 `assert(data_out, 0);
+    select = 0;
     #10 reset = 0;
 
-    // Write a byte to code location 50 
-    addr = 50;
+    // Write a byte to code location 5
+    addr = 5;
     data_in = 99;
     write = 1;
-    memory_type = MemoryTypeCode;
+    memory_type_data = 0;
     select = 1;
     #90 select = 0;
     data_in = 0;
     #10 reset = 0;
 
-    // Read a byte from code location 50
-    addr = 50;
+    // Read a byte from code location 5
+    addr = 5;
     write = 0;
-    memory_type = MemoryTypeCode;
+    memory_type_data = 0;
     select = 1;
-    #90 select = 0;
+    #80 `assert(data_out, 99);
+    select = 0;
     #10 reset = 0;
 
-    // Read a byte from data location 50
-    addr = 50;
+    // Read a byte from data location 5
+    addr = 5;
     write = 0;
-    memory_type = MemoryTypeData;
+    memory_type_data = 1;
     select = 1;
-    #90 select = 0;
+    #80 `assert(data_out, 42);
+    select = 0;
     #10 reset = 0;
 
     $finish();

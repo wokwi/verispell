@@ -16,9 +16,10 @@ module spell_execute (
     output reg [1:0] stack_write_count,
     output reg [7:0] set_stack_top,
     output reg [7:0] set_stack_belowtop,
+    output reg memory_write_en,
+    output reg memory_write_type_data,
     output reg [7:0] memory_write_data,
     output reg [7:0] memory_write_addr,
-    output reg [1:0] memory_write_type,
     output reg [7:0] delay_amount,
     output reg sleep,
     output reg stop
@@ -30,7 +31,8 @@ module spell_execute (
     stack_write_count = 2'd0;
     set_stack_top = 8'dx;
     set_stack_belowtop = 8'dx;
-    memory_write_type = `MemoryTypeNone;
+    memory_write_en = 1'b0;
+    memory_write_type_data = 1'b0;
     memory_write_addr = 8'dx;
     memory_write_data = 8'dx;
     sleep = 0;
@@ -95,7 +97,8 @@ module spell_execute (
         next_sp = sp + 1;
       end
       "!": begin
-        memory_write_type = `MemoryTypeCode;
+        memory_write_en = 1'b1;
+        memory_write_type_data = 1'b0;
         memory_write_addr = stack_top;
         memory_write_data = stack_belowtop;
         next_sp = sp - 2;
@@ -105,7 +108,8 @@ module spell_execute (
         stack_write_count = 1;
       end
       "w": begin
-        memory_write_type = `MemoryTypeData;
+        memory_write_en = 1'b1;
+        memory_write_type_data = 1'b1;
         memory_write_addr = stack_top;
         memory_write_data = stack_belowtop;
         next_sp = sp - 2;
