@@ -248,10 +248,12 @@ module spell (
           REG_PC: pc <= i_wb_data[7:0];
           REG_SP: sp <= i_wb_data[4:0];
           REG_EXEC: begin
-            opcode = i_wb_data[7:0];
-            state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
-            single_step <= 1;
-            out_of_order_exec <= 1;
+            if (state == StateSleep) begin
+              opcode = i_wb_data[7:0];
+              state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
+              single_step <= 1;
+              out_of_order_exec <= 1;
+            end
           end
           REG_CTRL: begin
             if (i_wb_data[0] && state == StateSleep) begin
@@ -370,11 +372,22 @@ module spell (
         state == StateDelay ||
         state == StateSleep
       );
+      if (i_wb_stb && i_wb_cyc && $past(i_wb_stb) && $past(i_wb_cyc)) begin
+        assume ($past(i_wb_addr) == i_wb_addr);
+        assume ($past(i_wb_data) == i_wb_data);
+        assume ($past(i_wb_we) == i_wb_we);
+      end
       if (state == StateDelay) begin
         assume (cycles_per_ms > 0);
         assume (!i_wb_we);  // Wishbone writes may change cycles_per_ms
         assert (delay_counter != 8'hff);
         assert (delay_cycles < cycles_per_ms);
+      end
+      if (state != StateFetch && state != StateFetchData && state != StateStore) begin
+        assert (!mem_select);
+      end
+      if (state != StateStore) begin
+        assert (!mem_write_en);
       end
     end
     f_init <= 0;

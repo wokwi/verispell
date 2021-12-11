@@ -101,4 +101,12 @@ module spell_mem (
     end
   end
 
+`ifdef FORMAL
+  always @(*) begin
+    if (!reset && select) begin
+      assert (memory_type == `MemoryTypeCode || memory_type == `MemoryTypeData);
+    end
+  end
+`endif
+
 endmodule
