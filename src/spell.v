@@ -239,6 +239,8 @@ module spell (
       intr <= 0;
       intr_enable <= 0;
       cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
+      delay_cycles <= 0;
+      mem_type <= `MemoryTypeNone;
     end else begin
       prev_wb_write <= wb_write;
       if (wb_write) begin
@@ -337,7 +339,7 @@ module spell (
             // The only way to leave this state is via CPU intervention.
           end
           StateDelay: begin
-            if (delay_cycles + 1 == cycles_per_ms) begin
+            if (delay_cycles + 1 >= cycles_per_ms) begin
               delay_counter <= delay_counter - 1;
               delay_cycles  <= 0;
               if (delay_counter == 0) begin
@@ -352,5 +354,31 @@ module spell (
       end
     end
   end
+
+`ifdef FORMAL
+  reg f_init = 1;
+  always @(posedge clock) begin
+    if (f_init) assume (reset);
+    if (!reset) begin
+      assert (!sleep || !stop);
+      assert (mem_type == `MemoryTypeNone || mem_type == `MemoryTypeCode || mem_type == `MemoryTypeData);
+      assert(
+        state == StateFetch ||
+        state == StateFetchData ||
+        state == StateExecute ||
+        state == StateStore ||
+        state == StateDelay ||
+        state == StateSleep
+      );
+      if (state == StateDelay) begin
+        assume (cycles_per_ms > 0);
+        assume (!i_wb_we);  // Wishbone writes may change cycles_per_ms
+        assert (delay_counter != 8'hff);
+        assert (delay_cycles < cycles_per_ms);
+      end
+    end
+    f_init <= 0;
+  end
+`endif  /* FORMAL */
 
 endmodule
