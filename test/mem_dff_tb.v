@@ -56,7 +56,8 @@ module test_spell_mem_dff ();
     write = 0;
     memory_type_data = 0;
     select = 1;
-    #80 `assert(data_out, 0);
+    #80 `assert(data_ready, 1);
+    `assert(data_out, 0);
     select = 0;
     #10 reset = 0;
 
@@ -65,7 +66,8 @@ module test_spell_mem_dff ();
     write = 0;
     memory_type_data = 1;
     select = 1;
-    #80 `assert(data_out, 42);
+    #80 `assert(data_ready, 1);
+    `assert(data_out, 42);
     select = 0;
     #10 reset = 0;
 
@@ -74,7 +76,8 @@ module test_spell_mem_dff ();
     write = 0;
     memory_type_data = 1;
     select = 1;
-    #80 `assert(data_out, 0);
+    #80 `assert(data_ready, 1);
+    `assert(data_out, 0);
     select = 0;
     #10 reset = 0;
 
@@ -93,7 +96,8 @@ module test_spell_mem_dff ();
     write = 0;
     memory_type_data = 0;
     select = 1;
-    #80 `assert(data_out, 99);
+    #80 `assert(data_ready, 1);
+    `assert(data_out, 99);
     select = 0;
     #10 reset = 0;
 
@@ -102,7 +106,8 @@ module test_spell_mem_dff ();
     write = 0;
     memory_type_data = 1;
     select = 1;
-    #80 `assert(data_out, 42);
+    #80 `assert(data_ready, 1);
+    `assert(data_out, 42);
     select = 0;
     #10 reset = 0;
 
