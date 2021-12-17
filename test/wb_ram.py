@@ -44,7 +44,7 @@ class WishboneRAMReader:
         return self
 
     def __next__(self):
-        addr = self._wb_addr.value << 2
+        addr = self._wb_addr.value & ~0x3  # 2 LSBs are always zero
         addr -= self._base_address
         value = (
             self._data[addr]
@@ -55,7 +55,7 @@ class WishboneRAMReader:
 
 
 class WishboneRAM:
-    def __init__(self, dut, clk, signals_dict, size=1024, base_address = 0):
+    def __init__(self, dut, clk, signals_dict, size=1024, base_address=0):
         self._dut = dut
         self._base_address = base_address
         self.data = [0] * size
@@ -69,7 +69,9 @@ class WishboneRAM:
         for transaction in transactions:
             sel = transaction.sel
             if transaction.datwr:
+                start_addr = transaction.adr & ~0x3  # 2 LSBs are always zero
+                start_addr -= self._base_address
                 for b in range(4):
                     if sel & (1 << b):
-                        addr = ((transaction.adr - self._base_address) << 2) + b
+                        addr = start_addr + b
                         self.data[addr] = (transaction.datwr >> (b*8)) & 0xff

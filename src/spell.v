@@ -34,7 +34,7 @@ module spell (
     output wire        rambus_wb_we_o,    // write enable
     output wire [ 3:0] rambus_wb_sel_o,   // write word select
     output wire [31:0] rambus_wb_dat_o,   // ram data out
-    output wire [ 7:0] rambus_wb_addr_o,  // 8 bit address
+    output wire [ 9:0] rambus_wb_addr_o,  // 8 bit address
     input  wire        rambus_wb_ack_i,   // ack
     input  wire [31:0] rambus_wb_dat_i,   // ram data in
 

@@ -29,7 +29,7 @@ module spell_mem (
     output wire sram_stb_o,
     output wire sram_we_o,
     output wire [3:0] sram_sel_o,
-    output wire [7:0] sram_addr_o,
+    output wire [9:0] sram_addr_o,
     output wire [31:0] sram_dat_o
 );
 
@@ -47,7 +47,7 @@ module spell_mem (
   assign sram_stb_o  = sram_select;
   assign sram_we_o   = write;
   assign sram_sel_o  = 1 << sram_byte_index;
-  assign sram_addr_o = {1'b0, data_select, addr[7:2]};
+  assign sram_addr_o = {1'b0, data_select, addr[7:2], 2'b00};
   assign sram_dat_o  = {data_in, data_in, data_in, data_in};
 
   wire io_data_ready;
