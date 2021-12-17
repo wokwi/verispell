@@ -72,5 +72,4 @@ class WishboneRAM:
                 for b in range(4):
                     if sel & (1 << b):
                         addr = ((transaction.adr - self._base_address) << 2) + b
-                        print(hex(addr), hex(self._base_address), len(self.data))
                         self.data[addr] = (transaction.datwr >> (b*8)) & 0xff
