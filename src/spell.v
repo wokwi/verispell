@@ -86,7 +86,10 @@ module spell (
   // Interrupts
   reg [INTR_COUNT-1:0] intr;
   reg [INTR_COUNT-1:0] intr_enable;
-  assign interrupt = |(intr & intr_enable);
+  reg edge_interrupts;
+  wire level_interrupt = |(intr & intr_enable);
+  reg prev_level_interrupt;
+  assign interrupt = edge_interrupts ? (!prev_level_interrupt && level_interrupt) : level_interrupt;
 
   // Out of order execution
   reg single_step;
@@ -207,7 +210,9 @@ module spell (
         REG_PC: o_wb_data <= {24'b0, pc};
         REG_SP: o_wb_data <= {27'b0, sp};
         REG_EXEC: o_wb_data <= {24'b0, opcode};
-        REG_CTRL: o_wb_data <= {29'b0, sram_enable, single_step, state != StateSleep};
+        REG_CTRL: begin
+          o_wb_data <= {28'b0, edge_interrupts, sram_enable, single_step, state != StateSleep};
+        end
         REG_CYCLES_PER_MS: o_wb_data <= {8'b0, cycles_per_ms};
         REG_STACK_TOP: o_wb_data <= {24'b0, stack_top};
         REG_INT_ENABLE: o_wb_data[INTR_COUNT-1:0] <= intr_enable;
@@ -241,10 +246,13 @@ module spell (
       sram_enable <= 0;
       intr <= 0;
       intr_enable <= 0;
+      edge_interrupts <= 0;
+      prev_level_interrupt <= 0;
       cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
       delay_cycles <= 0;
     end else begin
       prev_wb_write <= wb_write;
+      prev_level_interrupt <= level_interrupt;
       if (wb_write) begin
         case (wb_addr)
           REG_PC: pc <= i_wb_data[7:0];
@@ -264,6 +272,7 @@ module spell (
             end
             single_step <= i_wb_data[1];
             sram_enable <= i_wb_data[2];
+            edge_interrupts <= i_wb_data[3];
           end
           REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
           REG_STACK_TOP: stack[stack_top_index] <= o_wb_data[7:0];
