@@ -38,8 +38,8 @@ module spell_mem_dff (
         data_out   <= 8'bx;
         data_ready <= 1'b0;
 `ifdef SPELL_DFF_DELAY
-        cycles     <= 2'b11;
-`endif /* SPELL_DFF_DELAY */
+        cycles <= 2'b11;
+`endif  /* SPELL_DFF_DELAY */
       end else if (cycles > 0) begin
         cycles <= cycles - 1;
       end else begin
