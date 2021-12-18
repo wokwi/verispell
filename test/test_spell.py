@@ -647,27 +647,18 @@ async def test_intg_multiply(dut):
     clock_sig = await make_clock(dut, 10)
     await reset(dut)
 
-    await spell.write_program(
-        [
-            10,
-            11,
-            1,
-            "w",
-            0,
-            "x",
-            "x",
-            1,
-            "r",
-            "+",
-            "x",
-            6,
-            "@",
-            1,
-            "r",
-            "-",
-            "z",
-        ]
-    )
+    # fmt: off
+    await spell.write_program([
+        10, 11,
+        1, 'w',
+        0, 'x',
+        'x', 1, 'r', '+',
+        'x', 6, '@',
+        1, 'r', '-',
+        'z',    
+    ])
+    # fmt: on
+
     await spell.execute()
 
     logic_data = spell.logic_read()
