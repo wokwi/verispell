@@ -507,6 +507,21 @@ async def test_io(dut):
 
 
 @cocotb.test()
+async def test_io_pin_bug(dut):
+    PIN = 0x36
+
+    spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    await spell.write_program([0xf0, PIN, 'w', 0x55, PIN, 'w', 'z'])
+    await spell.execute()
+    assert dut.io_out.value == 0xa5 # 0xf0 ^ 0x55
+
+    clock_sig.kill()
+
+
+@cocotb.test()
 async def test_rambus(dut):
     spell = await create_spell(dut)
     clock_sig = await make_clock(dut, 10)

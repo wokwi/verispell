@@ -25,13 +25,17 @@ module spell_mem_io (
   localparam REG_DDR = 8'h37;
   localparam REG_PORT = 8'h38;
 
+  reg past_write;
+
   always @(posedge clock) begin
     if (reset) begin
       io_out <= 8'b00000000;
       io_oeb <= 8'b11111111;
       data_out <= 8'b0;
       data_ready <= 1'b0;
+      past_write <= 1'b0;
     end else begin
+      past_write <= select & write;
       if (select) begin
         data_out   <= 8'b0;
         data_ready <= 1'b1;
@@ -39,7 +43,7 @@ module spell_mem_io (
         case (addr)
           REG_PIN: begin
             if (write) begin
-              io_out <= io_out ^ data_in;
+              if (!past_write) io_out <= io_out ^ data_in;
             end else begin
               data_out <= io_in;
             end
