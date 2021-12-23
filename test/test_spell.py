@@ -87,13 +87,24 @@ class SpellController:
         self._ctrl_flags = 0
         self._wbram = WishboneRAM(dut, dut.rambus_wb_clk_o, ram_bus_signals)
         self.sram = self._wbram.data
+        dut.i_la_wb_disable = False  # Wishbone enabled by default
+        dut.i_la_write.value = False
+        self.use_la_write = False
 
     async def wb_read(self, addr):
         res = await self._wishbone.send_cycle([WBOp(addr)])
         return res[0].datrd
 
     async def wb_write(self, addr, value):
-        await self._wishbone.send_cycle([WBOp(addr, value)])
+        if self.use_la_write:
+            self._dut.i_la_write.value = 1
+            self._dut.i_la_addr.value = addr
+            self._dut.i_la_data.value = value
+            await ClockCycles(self._dut.clock, 1)
+            self._dut.i_la_write.value = 0
+            await ClockCycles(self._dut.clock, 1)
+        else:
+            await self._wishbone.send_cycle([WBOp(addr, value)])
 
     def enable_rambus(self):
         self._ctrl_flags |= CTRL_SRAM_ENABLE
@@ -182,6 +193,30 @@ async def create_spell(dut):
 @cocotb.test()
 async def test_add(dut):
     spell = await create_spell(dut)
+    clock_sig = await make_clock(dut, 10)
+    await reset(dut)
+
+    # Write a program that adds two numbers, then goes to sleep
+    await spell.write_progmem(0, 42)
+    await spell.write_progmem(1, 58)
+    await spell.write_progmem(2, "+")
+    await spell.write_progmem(3, "z")
+
+    await spell.execute()
+
+    logic_data = spell.logic_read()
+    assert logic_data["pc"] == 4
+    assert logic_data["sp"] == 1
+    assert logic_data["top"] == 100  # The sum
+
+    clock_sig.kill()
+
+
+@cocotb.test()
+async def test_add_la(dut):
+    spell = await create_spell(dut)
+    dut.i_la_wb_disable = True
+    spell.use_la_write = True
     clock_sig = await make_clock(dut, 10)
     await reset(dut)
 

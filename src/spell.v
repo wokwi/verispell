@@ -10,6 +10,10 @@ module spell (
     input wire clock,
 
     // Logic anaylzer
+    input wire i_la_write,
+    input wire [6:0] i_la_addr,
+    input wire [7:0] i_la_data,
+    input wire i_la_wb_disable,
     output wire [31:0] la_data_out,
 
     // Wishbone interface
@@ -118,9 +122,14 @@ module spell (
   reg wb_write_ack;
   assign o_wb_ack = wb_read_ack | wb_write_ack;
   wire wb_read = i_wb_stb && i_wb_cyc && !i_wb_we;
-  wire wb_write = i_wb_stb && i_wb_cyc && i_wb_we;
+  wire wb_write = i_wb_stb && i_wb_cyc && i_wb_we && !i_la_wb_disable;
   wire [23:0] wb_addr = i_wb_addr[23:0];
-  reg prev_wb_write;
+  reg prev_reg_write;
+
+  // Combined logic analyzer + wishbone write interface
+  wire reg_write = wb_write | i_la_write;
+  wire [6:0] reg_write_addr = i_la_write ? i_la_addr : i_wb_addr[6:0];
+  wire [31:0] reg_write_data = i_la_write ? {24'b0, i_la_data} : i_wb_data;
 
   // RAM bus clock and reset
   assign rambus_wb_clk_o = clock;
@@ -242,7 +251,7 @@ module spell (
       single_step <= 0;
       out_of_order_exec <= 0;
       wb_write_ack <= 0;
-      prev_wb_write <= 0;
+      prev_reg_write <= 0;
       sram_enable <= 0;
       intr <= 0;
       intr_enable <= 0;
@@ -251,40 +260,40 @@ module spell (
       cycles_per_ms <= 24'd10000;  /* we assume a 10MHz clock */
       delay_cycles <= 0;
     end else begin
-      prev_wb_write <= wb_write;
+      prev_reg_write <= reg_write;
       prev_level_interrupt <= level_interrupt;
-      if (wb_write) begin
-        case (wb_addr)
-          REG_PC: pc <= i_wb_data[7:0];
-          REG_SP: sp <= i_wb_data[4:0];
+      if (reg_write) begin
+        case (reg_write_addr)
+          REG_PC: pc <= reg_write_data[7:0];
+          REG_SP: sp <= reg_write_data[4:0];
           REG_EXEC: begin
             if (state == StateSleep) begin
-              opcode = i_wb_data[7:0];
+              opcode = reg_write_data[7:0];
               state <= is_data_opcode(opcode) ? StateFetchData : StateExecute;
               single_step <= 1;
               out_of_order_exec <= 1;
             end
           end
           REG_CTRL: begin
-            if (i_wb_data[0] && state == StateSleep) begin
+            if (reg_write_data[0] && state == StateSleep) begin
               out_of_order_exec <= 0;
               state <= StateFetch;
             end
-            single_step <= i_wb_data[1];
-            sram_enable <= i_wb_data[2];
-            edge_interrupts <= i_wb_data[3];
+            single_step <= reg_write_data[1];
+            sram_enable <= reg_write_data[2];
+            edge_interrupts <= reg_write_data[3];
           end
-          REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
-          REG_STACK_TOP: stack[stack_top_index] <= i_wb_data[7:0];
+          REG_CYCLES_PER_MS: cycles_per_ms <= reg_write_data[23:0];
+          REG_STACK_TOP: stack[stack_top_index] <= reg_write_data[7:0];
           REG_STACK_PUSH:
-          if (!prev_wb_write) begin
-            stack[sp] <= i_wb_data[7:0];
+          if (!prev_reg_write) begin
+            stack[sp] <= reg_write_data[7:0];
             sp <= sp + 1;
           end
-          REG_INT_ENABLE: intr_enable <= i_wb_data[INTR_COUNT-1:0];
-          REG_INT: intr <= intr & ~i_wb_data[INTR_COUNT-1:0];
+          REG_INT_ENABLE: intr_enable <= reg_write_data[INTR_COUNT-1:0];
+          REG_INT: intr <= intr & ~reg_write_data[INTR_COUNT-1:0];
         endcase
-        wb_write_ack <= 1;
+        if (wb_write) wb_write_ack <= 1;
       end else begin
         wb_write_ack <= 0;
         case (state)
