@@ -275,7 +275,7 @@ module spell (
             edge_interrupts <= i_wb_data[3];
           end
           REG_CYCLES_PER_MS: cycles_per_ms <= i_wb_data[23:0];
-          REG_STACK_TOP: stack[stack_top_index] <= o_wb_data[7:0];
+          REG_STACK_TOP: stack[stack_top_index] <= i_wb_data[7:0];
           REG_STACK_PUSH:
           if (!prev_wb_write) begin
             stack[sp] <= i_wb_data[7:0];
