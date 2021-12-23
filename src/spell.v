@@ -399,7 +399,7 @@ module spell (
       end
       if (state == StateDelay) begin
         assume (cycles_per_ms > 0);
-        assume (!i_wb_we);  // Wishbone writes may change cycles_per_ms
+        assume (!i_wb_we && !i_la_write);  // Writes may change cycles_per_ms
         assert (delay_counter != 8'hff);
         assert (delay_cycles < cycles_per_ms);
       end
