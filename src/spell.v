@@ -136,8 +136,8 @@ module spell (
   assign rambus_wb_rst_o = reset;
 
   // Logic Analyzer Connections:
-  // [       Stack Top     | State  |      SP      |         Opcode        |         PC          ]
-  // [ 31 30 29 28 27 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 ]
+  // [       Stack Top        | State  |      SP      |         Opcode        |         PC             ]
+  // [ 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00 ]
 
   assign la_data_out = {stack_top, state, sp, opcode, pc};
 
